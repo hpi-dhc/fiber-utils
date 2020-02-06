@@ -1,0 +1,12 @@
+# Python
+*.egg-info/
+.eggs/
+__pycache__/
+
+# Developer Tools
+.tox/
+.pytest_cache/
+.coverage/
+
+# Editors
+.vscode/
