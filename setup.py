@@ -24,7 +24,7 @@ test_requirements = [
 
 setup(
     author='Tom Martensen',
-    author_email='tom.martensen@student.hpi.de',
+    author_email='mail@tommartensen.de',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

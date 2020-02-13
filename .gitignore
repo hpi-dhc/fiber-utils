@@ -6,7 +6,7 @@ __pycache__/
 # Developer Tools
 .tox/
 .pytest_cache/
-.coverage/
+.coverage
 
 # Editors
 .vscode/
