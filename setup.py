@@ -44,7 +44,7 @@ setup(
     include_package_data=True,
     keywords='fiberutils',
     name='fiberutils',
-    packages=find_packages(include=['fiberutils']),
+    packages=find_packages(include=['fiberutils', 'fiberutils.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
