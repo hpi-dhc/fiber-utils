@@ -21,7 +21,7 @@ def cohort_overlap(cohorts: dict):
         dict with overlapping MRNs and figure
     """
     cohort_list = list(cohorts.values())
-    overlapping_mrns = cohort_list[0].mrns
+    overlapping_mrns = cohort_list[0].mrns.copy()
     for cohort in cohort_list:
         overlapping_mrns &= cohort.mrns
 
