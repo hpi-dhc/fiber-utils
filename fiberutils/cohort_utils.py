@@ -156,7 +156,9 @@ def cohort_condition_occurrence_heatmap(
     df.index.name = 'time interval relative to cohort condition'
 
     plt.figure(figsize=(16, 9))
-    plt.title('Percentage of patients with at least x encounters')
+    plt.title(
+        f'Percentage of patients with at least x number of {condition.__class__.__name__}'  # noqa
+    )
     figure = sns.heatmap(
         data=df,
         cmap="coolwarm",
