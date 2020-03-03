@@ -121,7 +121,7 @@ def cohort_condition_occurrence_heatmap(
     cohort,
     condition,
     time_windows,
-    encounter_limit,
+    max_condition_occurrences,
     should_annotate_figure,
     heatmap_kwargs={}
 ):
@@ -140,7 +140,7 @@ def cohort_condition_occurrence_heatmap(
     for c in data.columns:
         if c not in ['medical_record_number', 'age_in_days']:
             fills = {}
-            for limit in range(1, encounter_limit + 1):
+            for limit in range(1, max_condition_occurrences + 1):
                 fills[limit] = _column_fill_percentage(data, c, limit)
             results[c] = fills
     df = pd.DataFrame(results).T
