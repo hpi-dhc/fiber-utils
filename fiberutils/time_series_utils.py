@@ -29,7 +29,7 @@ def sax_transform(time_series_df, num_cuts):
     cuts = cuts_for_asize(num_cuts)
     return (
         time_series_df.groupby(OCCURRENCE_INDEX)
-        .agg(lambda x: ts_to_string(x.to_numpy(), cuts))
+        .agg({'value_representation': lambda x: ts_to_string(x.to_numpy(), cuts)})
         .reset_index()
     )
 
