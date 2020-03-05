@@ -247,9 +247,7 @@ def ssr_transform(
             -e["margin"],  # max margin
             len(e["subseq"]),
         ),
-    )[
-        0
-    ]  # min length
+    )[0]  # min length
 
     print("# Shapelet selection")
     print(
@@ -265,7 +263,10 @@ def ssr_transform(
             for s in seqs
         ]
     else:
-        transformed_seqs = [_sliding_ed(s, shapelet["subseq"]) for s in seqs]
+        transformed_seqs = [
+            _sliding_ed(s, shapelet["subseq"])
+            for s in seqs
+        ]
 
     df['value_representation'] = transformed_seqs
     return df[[

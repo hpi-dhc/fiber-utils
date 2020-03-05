@@ -7,7 +7,14 @@ import venn
 from fiber import Cohort
 from fiber.condition import MRNs
 from fiber.config import OCCURRENCE_INDEX
+from fiber.dataframe import (
+    create_id_column,
+    merge_to_base,
+    time_window_clip
+)
 from fiber.plots.distributions import bars
+
+from fiberutils.time_series_utils import ssr_transform
 
 
 def cohort_overlap(cohorts: dict):
@@ -200,3 +207,31 @@ def cohort_condition_occurrence_filter(
         'medical_record_number',
         'age_in_days'
     ]].reset_index().drop(columns='index')
+
+
+def pivot_time_series(
+    cohort,
+    condition,
+    window,
+    onset_df,
+):
+    df = cohort.time_series_for(condition, before=cohort.condition)
+
+    df = time_window_clip(df=df, window=window)
+    df.set_index(OCCURRENCE_INDEX, inplace=True)
+    create_id_column(condition, df)
+
+    results = []
+    for x in df.description.unique():
+        print(f'############# {x} #############')
+        current_df = df[df.description == x]
+        current_df = time_window_clip(df=current_df, window=window)
+
+        transformed_df = ssr_transform(current_df, cohort, onset_df)
+        transformed_df.rename(
+            columns={'value_representation': x},
+            inplace=True
+        )
+        results.append(transformed_df)
+
+    return merge_to_base(cohort.occurrences, results)
