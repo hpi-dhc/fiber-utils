@@ -215,7 +215,11 @@ def pivot_time_series(
     window,
     onset_df,
 ):
-    df = cohort.time_series_for(condition, before=cohort.condition)
+    df = cohort.time_series_for(
+        condition,
+        before=cohort.condition,
+        aggregate_value_per_day="mean"
+    )
 
     df = time_window_clip(df=df, window=window)
     df.set_index(OCCURRENCE_INDEX, inplace=True)
