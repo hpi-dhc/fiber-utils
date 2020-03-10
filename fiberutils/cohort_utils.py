@@ -109,10 +109,7 @@ def deduplicate_cohort(
 
     df = duplicate_information[
         ~duplicate_information[result_column]
-    ][[
-        'medical_record_number',
-        'age_in_days'
-    ]]
+    ][OCCURRENCE_INDEX]
 
     return {
         'cohort': Cohort(MRNs(df)),
@@ -132,6 +129,11 @@ def cohort_condition_occurrence_heatmap(
     should_annotate_figure,
     heatmap_kwargs={}
 ):
+    """
+    Heatmap of the fraction of patients in the cohort that have X condition
+    occurrences (x-axis) in the specified time windows (y-axis).
+    The condition can be any FIBER condition.
+    """
     data = cohort.aggregate_values_in(
         time_windows=time_windows,
         df=cohort.values_for(
@@ -145,7 +147,7 @@ def cohort_condition_occurrence_heatmap(
 
     results = {}
     for c in data.columns:
-        if c not in ['medical_record_number', 'age_in_days']:
+        if c not in OCCURRENCE_INDEX:
             fills = {}
             for limit in range(1, max_condition_occurrences + 1):
                 fills[limit] = _column_fill_percentage(data, c, limit)
@@ -164,7 +166,7 @@ def cohort_condition_occurrence_heatmap(
 
     plt.figure(figsize=(16, 9))
     plt.title(
-        f'Percentage of patients with at least x number of {condition.__class__.__name__}'  # noqa
+        f'Fraction of patients with at least x number of {condition.__class__.__name__}'  # noqa
     )
     figure = sns.heatmap(
         data=df,
@@ -188,6 +190,10 @@ def cohort_condition_occurrence_filter(
     time_interval,
     encounter_lower_limit
 ):
+    """
+    Filter cohorts based on the number of encounters in a specific time
+    interval, e.g. to remove patients that will not have dense data.
+    """
     data = cohort.aggregate_values_in(
         time_windows=[time_interval],
         df=cohort.values_for(
@@ -199,14 +205,12 @@ def cohort_condition_occurrence_filter(
         }
     )
 
-    for c in data.columns:
-        if c not in ['medical_record_number', 'age_in_days']:
-            data.rename(columns={c: 'no_encounters'}, inplace=True)
+    c = list(set(data.columns) - set(OCCURRENCE_INDEX))[0]
+    data.rename(columns={c: 'no_encounters'}, inplace=True)
 
-    return data[data.no_encounters >= encounter_lower_limit][[
-        'medical_record_number',
-        'age_in_days'
-    ]].reset_index().drop(columns='index')
+    return data[data.no_encounters >= encounter_lower_limit][
+        OCCURRENCE_INDEX
+    ].reset_index().drop(columns='index')
 
 
 def pivot_time_series(
@@ -215,6 +219,9 @@ def pivot_time_series(
     window,
     onset_df,
 ):
+    """
+    Fetch and pivot time series with sparse symbolic representation
+    """
     df = cohort.time_series_for(
         condition,
         before=cohort.condition,

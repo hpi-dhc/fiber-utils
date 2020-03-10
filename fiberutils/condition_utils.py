@@ -2,6 +2,7 @@ import math
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from fiber.config import OCCURRENCE_INDEX
 from fiber.plots.distributions import hist
 
 
@@ -192,6 +193,10 @@ def condition_occurrence_quantiles_for_days(
     observation_limits,
     return_raw=False
 ):
+    """
+    Calculate the quantiles of time_delta_in_days within the limits
+    for given intervals from observation_limits
+    """
     if (
         not type(observation_limits) == list
     ) or (
@@ -231,6 +236,10 @@ def condition_occurrence_number_days_for_quantiles(
     quantiles,
     return_raw=False
 ):
+    """
+    Calculate the number of days between the limit to reach the given
+    quantiles for the specified condition.
+    """
     if (
         not type(quantiles) == list
     ) or (
@@ -396,21 +405,21 @@ def plot_condition_first_occurrence_on_day_hist(
     lower_limit=-365,
     upper_limit=0
 ):
+    """
+    Plot a histogram of the time_delta from the cohort condition until the
+    first occurrence of the specified condition.
+    """
     df = cohort.values_for(
         target=condition,
         before=cohort.condition,
     )
 
-    df = df[[
-        'medical_record_number', 'age_in_days', 'time_delta_in_days'
-    ]].drop_duplicates()
+    df = df[OCCURRENCE_INDEX + ['time_delta_in_days']].drop_duplicates()
     df = df[
         (df.time_delta_in_days >= lower_limit)
         & (df.time_delta_in_days <= upper_limit)
     ]
-    df = df.groupby([
-        'medical_record_number', 'age_in_days'
-    ]).min().drop_duplicates()
+    df = df.groupby(OCCURRENCE_INDEX).min().drop_duplicates()
     return {
         'data': df.drop_duplicates(),
         'figure': df.time_delta_in_days.hist(
@@ -425,21 +434,21 @@ def plot_condition_last_occurrence_on_day_hist(
     lower_limit=-365,
     upper_limit=0
 ):
+    """
+    Plot a histogram of the time_delta from the cohort condition until the
+    last occurrence of the specified condition.
+    """
     df = cohort.values_for(
         target=condition,
         before=cohort.condition,
     )
 
-    df = df[[
-        'medical_record_number', 'age_in_days', 'time_delta_in_days'
-    ]].drop_duplicates()
+    df = df[OCCURRENCE_INDEX + ['time_delta_in_days']].drop_duplicates()
     df = df[
         (df.time_delta_in_days >= lower_limit)
         & (df.time_delta_in_days <= upper_limit)
     ]
-    df = df.groupby([
-        'medical_record_number', 'age_in_days'
-    ]).max().drop_duplicates()
+    df = df.groupby(OCCURRENCE_INDEX).max().drop_duplicates()
 
     return {
         'data': df,
@@ -455,6 +464,10 @@ def number_condition_occurrences_per_patient(
     time_interval=[-365, 0],
     threshold=20
 ):
+    """
+    Calculate the number of condition occurrences per patient
+    and plot them as a histogram to compare possible features
+    """
     df = cohort.values_for(
         target=condition,
         before=cohort.condition,

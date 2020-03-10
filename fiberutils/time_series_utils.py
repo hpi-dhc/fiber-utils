@@ -16,6 +16,9 @@ from saxpy.znorm import znorm
 
 
 def _preprocess_ts(time_series_df):
+    """
+    z-normalizes the time series' numeric values
+    """
     del time_series_df["time_delta_in_days"]
     time_series_df["value_representation"] = znorm(
         time_series_df.numeric_value
@@ -25,6 +28,10 @@ def _preprocess_ts(time_series_df):
 
 
 def sax_transform(time_series_df, num_cuts):
+    """
+    Applies SAX transformation for a number of cuts, e.g. 3, 5, ...
+    to have symbolic representation.
+    """
     time_series_df = _preprocess_ts(time_series_df)
     cuts = cuts_for_asize(num_cuts)
     return (
@@ -34,19 +41,9 @@ def sax_transform(time_series_df, num_cuts):
     )
 
 
-def paa_transform(time_series_df, num_cuts, len_agg):
-    time_series_df = _preprocess_ts(time_series_df)
-    cuts = cuts_for_asize(num_cuts)
-    return (
-        time_series_df.groupby(OCCURRENCE_INDEX)
-        .agg(lambda x: ts_to_string(paa(x.to_numpy(), len_agg), cuts))
-        .reset_index()
-    )
-
-
 def _get_random_subsequence(sequences):
     """
-    generate a random subsequence from a list of alphabetic sequences
+    Generate a random subsequence from a list of alphabetic sequences
     """
     selected_sequence = sequences[np.random.randint(len(sequences))]
     if len(selected_sequence) == 1:
@@ -58,7 +55,7 @@ def _get_random_subsequence(sequences):
 
 def _sliding_ed(sequence, shapelet):
     """
-    compute the minimum edit distance between a shapelet and
+    Compute the minimum edit distance between a shapelet and
     (each subsequence of) a sequence
     """
     if len(shapelet) > len(sequence):
@@ -80,7 +77,7 @@ def _evaluate_candidate(
     missing_data_labels=None,
 ):
     """
-    evaluate a subsequence candidate
+    Evaluate a subsequence candidate
     """
     # sort labels wrt the edit distance
     sorted_distances, sorted_labels = zip(
@@ -184,15 +181,21 @@ def _get_split_entropy(a, b):
 
 
 def ssr_transform(
-    time_series_df, cohort, onset_df, num_cuts=3, missing='lr', n_candidates=20
+    time_series_df,
+    cohort,
+    onset_df,
+    num_cuts=3,
+    missing='lr',
+    n_candidates=20
 ):
     """
-    Sparse symbolic representation of time series
+    Compute Sparse Symbolic Representation (SSR) of time series.
+    This includes representation as symbols (defined by num_cuts),
+    shapelet generation and selection, as well as transformation of the
+    symbols into numeric values based on the edit distance to the selected
+    shapelet.
     """
-
-    target = list(
-        set(onset_df.columns) - {"medical_record_number", "age_in_days"}
-    )[0]
+    target = list(set(onset_df.columns) - set(OCCURRENCE_INDEX))[0]
     df = cohort.merge_patient_data(
         sax_transform(time_series_df=time_series_df, num_cuts=3,), onset_df
     ).fillna("z")
@@ -269,8 +272,4 @@ def ssr_transform(
         ]
 
     df['value_representation'] = transformed_seqs
-    return df[[
-        'medical_record_number',
-        'age_in_days',
-        'value_representation'
-    ]]
+    return df[OCCURRENCE_INDEX + ['value_representation']]
