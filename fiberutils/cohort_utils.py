@@ -6,8 +6,9 @@ import seaborn as sns
 import venn
 from fiber import Cohort
 from fiber.condition import MRNs
-from fiber.config import OCCURRENCE_INDEX
+from fiber.config import OCCURRENCE_INDEX, VERBOSE
 from fiber.dataframe import (
+    column_threshold_clip,
     create_id_column,
     merge_to_base,
     time_window_clip
@@ -213,36 +214,69 @@ def cohort_condition_occurrence_filter(
     ].reset_index().drop(columns='index')
 
 
+def get_time_series(cohort, condition, window, threshold=None):
+    df = cohort.time_series_for(
+        condition,
+        before=cohort.condition,
+        aggregate_value_per_day_func="mean"
+    )
+    df = time_window_clip(df=df, window=window)
+
+    df.set_index(OCCURRENCE_INDEX, inplace=True)
+    create_id_column(condition, df)
+    if threshold:
+        df = threshold_clip_time_series(
+            df=df,
+            cohort=cohort,
+            threshold=threshold
+        )
+
+    return df
+
+
+def threshold_clip_time_series(df, cohort, threshold):
+        binarized_df = df.pivot_table(
+            index=OCCURRENCE_INDEX,
+            columns=['description'],
+            aggfunc={'time_delta_in_days':'any'}
+        )
+
+        binarized_df.columns = binarized_df.columns.droplevel()
+        binary_df_with_cohort = merge_to_base(
+            cohort.occurrences,
+            [binarized_df]
+        ).set_index(OCCURRENCE_INDEX)
+
+        cols_selected = column_threshold_clip(
+            df=binary_df_with_cohort,
+            threshold=threshold
+        ).columns
+
+        return df[df.description.isin(cols_selected)]
+
+
 def pivot_time_series(
     cohort,
-    condition,
-    window,
     onset_df,
+    df
 ):
     """
     Fetch and pivot time series with sparse symbolic representation
     """
-    df = cohort.time_series_for(
-        condition,
-        before=cohort.condition,
-        aggregate_value_per_day="mean"
-    )
+    if not df.empty:
+        results = []
+        for x in df.description.unique():
+            if VERBOSE:
+                print(f'############# {x} #############')
+            current_df = df[df.description == x]
 
-    df = time_window_clip(df=df, window=window)
-    df.set_index(OCCURRENCE_INDEX, inplace=True)
-    create_id_column(condition, df)
-
-    results = []
-    for x in df.description.unique():
-        print(f'############# {x} #############')
-        current_df = df[df.description == x]
-        current_df = time_window_clip(df=current_df, window=window)
-
-        transformed_df = ssr_transform(current_df, cohort, onset_df)
-        transformed_df.rename(
-            columns={'value_representation': x},
-            inplace=True
-        )
-        results.append(transformed_df)
+            transformed_df = ssr_transform(current_df, cohort, onset_df)
+            transformed_df.rename(
+                columns={'value_representation': x},
+                inplace=True
+            )
+            results.append(transformed_df)
+    else:
+        results = [df]
 
     return merge_to_base(cohort.occurrences, results)

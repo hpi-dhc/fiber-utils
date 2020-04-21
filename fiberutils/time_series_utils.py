@@ -8,7 +8,8 @@ from math import log
 
 import editdistance as ed
 import numpy as np
-from fiber.config import OCCURRENCE_INDEX
+from fiber.config import OCCURRENCE_INDEX, VERBOSE
+from fiber.dataframe import merge_to_base
 from saxpy.alphabet import cuts_for_asize
 from saxpy.paa import paa
 from saxpy.sax import ts_to_string
@@ -142,7 +143,8 @@ def _evaluate_candidate(
     best_evaluation = sorted(
         evaluations, key=lambda e: (-e["ig"], -e["margin"], e["index"])
     )[0]
-    print("best split:", best_evaluation)
+    if VERBOSE:
+        print("best split:", best_evaluation)
     return best_evaluation
 
 
@@ -196,8 +198,12 @@ def ssr_transform(
     shapelet.
     """
     target = list(set(onset_df.columns) - set(OCCURRENCE_INDEX))[0]
-    df = cohort.merge_patient_data(
-        sax_transform(time_series_df=time_series_df, num_cuts=3,), onset_df
+    df = merge_to_base(
+        cohort.occurrences,
+        [
+            sax_transform(time_series_df=time_series_df, num_cuts=3,),
+            onset_df
+        ]
     ).fillna("z")
     seqs, labels = df["value_representation"], df[target]
 
@@ -213,7 +219,8 @@ def ssr_transform(
     candidates = list(sorted(candidates))
 
     # evaluate candidates according to 'lr' or 'plain' method
-    print("# Candidate evaluation")
+    if VERBOSE:
+        print("# Candidate evaluation")
     if missing == "lr":
         missing_data_labels = [
             l for i, l in enumerate(labels) if seqs[i] == "z"
@@ -252,12 +259,13 @@ def ssr_transform(
         ),
     )[0]  # min length
 
-    print("# Shapelet selection")
-    print(
-        "selected shapelet:{} ig:{:.3f} margin:{}".format(
-            shapelet["subseq"], shapelet["ig"], shapelet["margin"]
+    if VERBOSE:
+        print("# Shapelet selection")
+        print(
+            "selected shapelet:{} ig:{:.3f} margin:{}".format(
+                shapelet["subseq"], shapelet["ig"], shapelet["margin"]
+            )
         )
-    )
 
     # transform sequence dataset based on the selected shapelet
     if missing == "lr":
