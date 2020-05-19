@@ -217,7 +217,7 @@ def cohort_condition_occurrence_filter(
 def get_time_series(cohort, condition, window, threshold=None):
     df = cohort.time_series_for(
         condition,
-        before=cohort.condition,
+        relative_to=cohort.condition,
         aggregate_value_per_day_func="mean"
     )
     df = time_window_clip(df=df, window=window)
